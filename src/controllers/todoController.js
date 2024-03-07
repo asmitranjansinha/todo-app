@@ -64,7 +64,6 @@ exports.createTodo = async (req, res) => {
 
 // Update todo
 exports.updateTodo = async (req, res) => {
-    console.log("Api Hit");
     try {
         const id = req.params.id;
         const { title, description, completed } = req.body;
