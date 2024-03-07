@@ -1,47 +1,103 @@
 const Todo = require('../models/Todo');
-
-let todos = [];
+const db = require('../models/db');
 
 // Get all todos
-exports.getAllTodos = (req, res) => {
-    res.json(todos);
+exports.getAllTodos = async (req, res) => {
+    try {
+        db.all('SELECT * FROM todos', (err, rows) => {
+            if (err) {
+                console.error('Error fetching todos:', err.message);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            const todos = rows.map(row => new Todo(row.id, row.title, row.description, row.completed));
+            res.json(todos);
+        });
+    } catch (error) {
+        console.error('Error getting all todos:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 };
 
 // Get todo by ID
-exports.getTodoById = (req, res) => {
-    const todo = todos.find(todo => todo.id === parseInt(req.params.id));
-    if (!todo) {
-        return res.status(404).json({ message: 'Todo not found' });
+exports.getTodoById = async (req, res) => {
+    try {
+        const id = req.params.id;
+        db.get('SELECT * FROM todos WHERE id = ?', [id], (err, row) => {
+            if (err) {
+                console.error('Error fetching todo by ID:', err.message);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            if (!row) {
+                console.error('Todo not found');
+                res.status(404).json({ message: 'Todo not found' });
+                return;
+            }
+            const todo = new Todo(row.id, row.title, row.description, row.completed);
+            res.json(todo);
+        });
+    } catch (error) {
+        console.error('Error getting todo by ID:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
-    res.json(todo);
 };
 
-// Create new todo
-exports.createTodo = (req, res) => {
-    const { title, description } = req.body;
-    if (!title || !description) {
-        return res.status(400).json({ message: 'Title and description are required' });
+// Create todo
+exports.createTodo = async (req, res) => {
+    try {
+        const { title, description, completed } = req.body;
+        const sql = 'INSERT INTO todos (title, description, completed) VALUES (?, ?, ?)';
+        db.run(sql, [title, description, completed], function (err) {
+            if (err) {
+                console.error('Error creating todo:', err.message);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(201).json({ id: this.lastID });
+        });
+    } catch (error) {
+        console.error('Error creating todo:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
-    const newTodo = new Todo(Date.now(), title, description, false);
-    todos.push(newTodo);
-    res.status(201).json(newTodo);
 };
 
 // Update todo
-exports.updateTodo = (req, res) => {
-    const { title, description, completed } = req.body;
-    const todo = todos.find(todo => todo.id === parseInt(req.params.id));
-    if (!todo) {
-        return res.status(404).json({ message: 'Todo not found' });
+exports.updateTodo = async (req, res) => {
+    console.log("Api Hit");
+    try {
+        const id = req.params.id;
+        const { title, description, completed } = req.body;
+        const sql = 'UPDATE todos SET title = ?, description = ?, completed = ? WHERE id = ?';
+        db.run(sql, [title, description, completed, id], function (err) {
+            if (err) {
+                console.error('Error updating todo:', err.message);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(200).json({ message: 'Todo updated successfully' });
+        });
+    } catch (error) {
+        console.error('Error updating todo:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
-    todo.title = title || todo.title;
-    todo.description = description || todo.description;
-    todo.completed = completed || todo.completed;
-    res.json(todo);
 };
 
 // Delete todo
-exports.deleteTodo = (req, res) => {
-    todos = todos.filter(todo => todo.id !== parseInt(req.params.id));
-    res.status(204).end();
+exports.deleteTodo = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const sql = 'DELETE FROM todos WHERE id = ?';
+        db.run(sql, [id], function (err) {
+            if (err) {
+                console.error('Error deleting todo:', err.message);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+            res.status(204).end();
+        });
+    } catch (error) {
+        console.error('Error deleting todo:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 };

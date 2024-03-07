@@ -2,13 +2,13 @@ const express = require('express');
 const router = express.Router();
 const todoController = require('../controllers/todoController');
 
-// Get all todos
+// GET all todos
 router.get('/', todoController.getAllTodos);
 
-// Get todo by ID
+// GET todo by ID
 router.get('/:id', todoController.getTodoById);
 
-// Create new todo
+// Create todo
 router.post('/', todoController.createTodo);
 
 // Update todo

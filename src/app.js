@@ -3,7 +3,7 @@ const app = express();
 const todoRoutes = require('./routes/todoRoutes');
 const { errorHandler } = require('./middleware/errorHandling');
 
-// Middleware
+// Middleware for JSON body parsing
 app.use(express.json());
 
 // Routes
